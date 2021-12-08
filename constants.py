@@ -2,8 +2,8 @@ import os
 import numpy as np
 from enum import Enum
 
-TRAIN_FILE = os.path.join('Train_Arabic_Digit.txt')
-TEST_FILE = os.path.join('Test_Arabic_Digit.txt')
+TRAIN_FILE = os.path.join('Data/Train_Arabic_Digit.txt')
+TEST_FILE = os.path.join('Data/Test_Arabic_Digit.txt')
 
 NUM_MFCC = 13
 ALL_COEFFS = np.arange(0, NUM_MFCC, 1)

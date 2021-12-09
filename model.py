@@ -76,16 +76,12 @@ class DigitPredictor:
             self.cluster_labels_list.append(cluster_labels)
 
             # Find sample mean, sample covariance, and probability of each cluster
-            # TODO: Try to find a way to find other than the full covariance matrices
             cluster_weights = []
             cluster_means = []
             cluster_covariances = []
             cluster_precisions = []
 
-            if covariance_type == CovarianceType.TIED:
-                for i in range(n_components):
-                    cluster_frames = mfcc_frames[cluster_labels == i]
-                    cluster_mean = np.mean(cluster_frames, axis=0, dtype=np.float64)
+            mfcc_frames_demeaned = mfcc_frames.copy()
 
             for i in range(n_components):
                 cluster_frames = mfcc_frames[cluster_labels == i]
@@ -97,19 +93,23 @@ class DigitPredictor:
                 elif covariance_type == CovarianceType.DIAG:
                     cluster_cov = np.zeros((cluster_mean.shape[0], cluster_mean.shape[0]))
                     for j in range(cluster_mean.shape[0]):
-                        cluster_cov[j, j] = sum((val - cluster_mean[j]) ** 2 for val in cluster_frames[:,j]) / cluster_frames.shape[0]
+                        cluster_cov[j, j] = sum((val - cluster_mean[j]) ** 2 for val in cluster_frames[:, j]) / cluster_frames.shape[0]
                 elif covariance_type == CovarianceType.SPHERICAL:
+                    # TODO: Spherical covariance from samples
                     pass
+                elif covariance_type == CovarianceType.TIED:
+                    mfcc_frames_demeaned[cluster_labels == i] = mfcc_frames_demeaned[cluster_labels == i] - cluster_mean
 
                 cluster_weight = len(cluster_frames) / len(mfcc_frames)
 
                 cluster_weights.append(cluster_weight)
                 cluster_means.append(cluster_mean)
-                cluster_covariances.append(cluster_cov)
-                cluster_precisions.append(np.linalg.inv(cluster_cov))
-
-                component_params = (cluster_mean, cluster_cov, cluster_weight)
-                gmm_params.append(component_params)
+                if not covariance_type == CovarianceType.TIED:
+                    cluster_covariances.append(cluster_cov)
+                    cluster_precisions.append(np.linalg.inv(cluster_cov))
+            if covariance_type == CovarianceType.TIED:
+                cluster_cov = np.cov(mfcc_frames_demeaned, rowvar=False)
+                cluster_covariances = [cluster_cov] * n_components
 
             cluster_weights, cluster_means, cluster_covariances, cluster_precisions = np.asarray(cluster_weights), \
                                                                                       np.asarray(cluster_means), \
@@ -124,15 +124,6 @@ class DigitPredictor:
 
         elif gmm_parameter_method == GMMParameterMethod.EM:
             gmm = GaussianMixture(n_components=n_components, covariance_type=covariance_type.value).fit(mfcc_frames)
-
-            for i in range(n_components):
-                covariance = None
-                if covariance_type == CovarianceType.FULL:
-                    covariance = gmm.covariances_[i]
-                elif covariance_type == CovarianceType.TIED:
-                    covariance = gmm.covariances_
-                elif covariance_type == CovarianceType.DIAG or covariance_type == CovarianceType.SPHERICAL:
-                    covariance = gmm.covariances_[i] * np.identity(self.n_features)
 
         self.gmm_list.append(gmm)
         self.mfcc_frames_list.append(mfcc_frames)
@@ -168,7 +159,7 @@ class DigitPredictor:
 if __name__ == '__main__':
     coeffs = ALL_COEFFS
     dp = DigitPredictor(coeffs)
-    covs = [CovarianceType.DIAG]
+    covs = [CovarianceType.TIED]
     gmm_method = GMMParameterMethod.KMEANS
     it = 10
 

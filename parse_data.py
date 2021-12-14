@@ -2,7 +2,7 @@ from constants import *
 import numpy as np
 
 
-def load_data(filepath, coeffs):
+def load_data(filepath, coeffs=ALL_COEFFS):
     """
     :param filepath: Path for the file to read, either the TRAIN_FILE or TEST_FILE
     :return:
@@ -68,7 +68,6 @@ def convert_list_to_mask(list_of_indices):
 
 
 if __name__ == "__main__":
-    # train_digits, train_labels = get_train_data()
     coeffs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     test_digits, test_labels = get_test_data()
     assert (len(test_digits[0][0]) == len(coeffs))

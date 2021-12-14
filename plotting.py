@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from parse_data import load_data, get_train_data
+from parse_data import load_data, get_train_data, get_test_data
 from constants import *
 import numpy as np
 from scipy.stats import multivariate_normal
@@ -23,11 +23,12 @@ def plot_mffc(digit):
     plt.figure()
     for i in range(num_mfcc_coeffs):
         mfcc_values = digit[:, i]
-        plt.plot(time_windows, mfcc_values, label=f'Coefficient {i+1}')
+        plt.plot(time_windows[::5], mfcc_values[::5], label=f'MFCC {i+1}')
     plt.xlabel('Time Window Index')
     plt.ylabel('MFCC Values')
-    plt.legend(loc='best')
-    plt.title('MFCC Values vs Time Window Index')
+    plt.legend(loc='lower right')
+    # plt.title('MFCC Values vs Time Window Index for a Single Spoken Digit Sample')
+    plt.title('Every Fifth Frame of a Single Spoken Digit Sample')
     plt.grid(True)
     plt.show()
 
@@ -37,12 +38,35 @@ def plot_mfcc_example_digit():
     plot_mffc(train_data[0])
 
 
-def plot_clusters_2d(mffc_frames, cluster_labels, gmm_parameters, show_mean_and_cov=False, plot_padding_value=0.5):
+def plot_mfcc_variances():
+    train_data, train_labels = get_train_data()
+    test_data, test_labels = get_test_data()
+    mfcc_frames = []
+
+    for digit_block in train_data:
+        for mfcc_coeffs in digit_block:
+            mfcc_frames.append(mfcc_coeffs)
+
+    for digit_block in test_data:
+        for mfcc_coeffs in digit_block:
+            mfcc_frames.append(mfcc_coeffs)
+
+    mfcc_frames = np.asarray(mfcc_frames)
+
+    var = np.var(mfcc_frames, axis=0)
+    plt.scatter(range(len(var)), var)
+    plt.xlabel('Mel-Frequency Cepstrum Coefficient')
+    plt.ylabel('Variance of MFCC Value')
+    plt.title('Variance of the MFCC Values')
+    plt.show()
+
+
+def plot_clusters_2d(mffc_frames, cluster_labels, gmm_parameters, show_mean_and_cov=True, plot_padding_value=0.5):
     n_clusters = max(list(set(cluster_labels))) + 1
 
     fig, ax = plt.subplots(1, 1)
     scatter = ax.scatter(mffc_frames[:, 0], mffc_frames[:, 1], c=cluster_labels, label=cluster_labels)
-    ax.set_title('All Clusters')
+    ax.set_title('Clusters for Digit 2')
     ax.set_xlabel('Dimension 1')
     ax.set_ylabel('Dimension 2')
 
@@ -64,6 +88,7 @@ def plot_clusters_2d(mffc_frames, cluster_labels, gmm_parameters, show_mean_and_
             Y = np.linspace(np.min(cluster_frames[:, 1].flatten())-plot_padding_value, np.max(cluster_frames[:, 1].flatten())+plot_padding_value, N)
             X, Y = np.meshgrid(X, Y)
             pos = np.dstack((X, Y))
+            print(cluster_cov)
             rv = multivariate_normal(cluster_mean, cluster_cov)
             Z = rv.pdf(pos)
             ax.contour(X, Y, Z)
@@ -71,14 +96,6 @@ def plot_clusters_2d(mffc_frames, cluster_labels, gmm_parameters, show_mean_and_
 
 
 def plot_clusters_tsne(mffc_frames, cluster_labels, gmm_parameters, covariance_type, plot_padding_value=0.5):
-    """
-
-    :param mffc_frames: Frames for a digit
-    :param cluster_labels: Labels for those frames, coming from kmeans
-    :param gmm_parameters: Gaussian mixture model parameters for each kmeans cluster
-    :param plot_padding_value: How much to pad the resulting 2D plot
-    :return: Plots the clusters, their means, and their covariances after mapping the higher dimensional data to 2 dimensions
-    """
     num_dimensions = len(mffc_frames[0])
 
     if not num_dimensions == 2:
@@ -106,6 +123,6 @@ def kmeans_and_plot_with_tsne_for_digit(data, digit_value, covariance_type, n_cl
 
 if __name__ == '__main__':
     coeffs = ALL_COEFFS
-    covariance_type = CovarianceType.FULL
-    kmeans_and_plot_with_tsne_for_digit(get_train_data(coeffs=coeffs), digit_value=0, covariance_type=covariance_type, n_clusters=8)
-    # plot_mfcc_example_digit()
+    covs = [CovarianceType.FULL, CovarianceType.DIAG, CovarianceType.TIED, CovarianceType.SPHERICAL]
+    for cov in covs:
+        kmeans_and_plot_with_tsne_for_digit(get_train_data(coeffs=[0, 1]), digit_value=2, covariance_type=cov, n_clusters=7)

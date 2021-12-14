@@ -29,12 +29,3 @@ class CovarianceType(Enum):
     SPHERICAL = 'spherical'
 
 
-class CovarianceConstraints(Enum):
-    SPHERICAL = 0  # Only covariance diagonal. ALl diagonal entries are the same, so need to estimate 1 parameter for the covariance
-    INDEPENDENT = 1  # Only covariance diagonal. Entries can be different so need to estimate D parameters for covariance
-    FULL = 2  # Full covariance matrix, need to estimate (D^2 / 2 + D/2) parameters
-
-
-class CovarianceRelationships(Enum):
-    SAME = 0  # Means the covariance matrices will be equal for all mixture components / clusters
-    UNIQUE = 1  # Means the covariance matrices for different mixture components will not be restricted to be equal

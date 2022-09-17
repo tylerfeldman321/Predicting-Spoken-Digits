@@ -1,5 +1,5 @@
 # Predicting-Spoken-Digits
-Duke ECE 480 Applied Probability for Statistical Learning project to predict spoken digits in Arabic using a Gaussian Mixture Model (GMM). For detailed information about this project, see the included pdf.
+Duke ECE 480 Applied Probability for Statistical Learning project to predict spoken digits in Arabic using a Gaussian Mixture Model (GMM). For detailed information about this project, see the included pdf: `Predicting Spoken Digits.pdf`.
 
 ## Modeling Approach
 Each digit can be represented as a unique collection of phonemes, which are sounds that make up a noise. The model we are using is the Gaussian Mixture Model (GMM), where each Gaussian component represents one of these phonemes. We can create one GMM to model each digit. To find the parameters for each GMM, the two approaches implemented are expectation-maximization and K-Means clustering followed by manual calculation of the Gaussian parameters for each digit. After finding these ten GMM's, we can use maximum likelihood classification to predict the class for a new digit. There are many additional modeling options experimented with, such as creating two models for each digit: one for the male speakers, and one for the female speakers.
